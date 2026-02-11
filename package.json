@@ -1,0 +1,19 @@
+{
+  "name": "email-automator",
+  "version": "0.1.0",
+  "description": "Controlled intelligence layer on Microsoft 365 mail — structured context → LLM draft → Outlook Drafts",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "@azure/msal-node": "^2.6.0",
+    "@microsoft/microsoft-graph-client": "^3.0.7",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "openai": "^4.20.0"
+  }
+}

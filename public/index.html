@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Email Automator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --bg-elevated: #0f0f0f;
+      --surface: #141414;
+      --surface-hover: #1a1a1a;
+      --border: #252525;
+      --border-focus: #2d3d2d;
+      --text: #e8e8e8;
+      --text-muted: #888;
+      --green: #7bed9f;
+      --green-dim: #5eead4;
+      --green-bright: #55efc4;
+      --green-glow: rgba(123, 237, 159, 0.25);
+      --green-soft: rgba(123, 237, 159, 0.12);
+      --green-soft-hover: rgba(123, 237, 159, 0.18);
+      --success: #55efc4;
+      --error: #f87171;
+      --error-soft: rgba(248, 113, 113, 0.12);
+      --info-soft: rgba(123, 237, 159, 0.1);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 20px rgba(0,0,0,0.4);
+      --transition: 0.2s ease;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background: var(--bg);
+      background-image: radial-gradient(ellipse 120% 70% at 50% -10%, rgba(123, 237, 159, 0.08), transparent);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .container { max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.35rem;
+    }
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--green) 0%, var(--green-dim) 100%);
+      box-shadow: 0 0 20px var(--green-glow);
+    }
+    h1 {
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin: 0;
+      color: var(--text);
+    }
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin: 0.25rem 0 0;
+      font-weight: 500;
+    }
+    .subtitle span { color: var(--green-bright); font-weight: 600; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.25rem;
+      transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+    }
+    .card:hover { border-color: var(--border-focus); }
+    .card:focus-within { border-color: var(--green); box-shadow: 0 0 0 1px var(--green-soft); }
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .card h2::before {
+      content: '';
+      width: 4px;
+      height: 1rem;
+      border-radius: 2px;
+      background: var(--green);
+    }
+    .card-desc { color: var(--text-muted); font-size: 0.9rem; margin: 0 0 1.25rem; line-height: 1.5; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.35rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: inherit;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all var(--transition);
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary {
+      background: linear-gradient(180deg, var(--green) 0%, var(--green-dim) 100%);
+      color: #0a0a0a;
+      box-shadow: 0 2px 12px var(--green-glow);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(180deg, var(--green-bright) 0%, var(--green) 100%);
+      box-shadow: 0 4px 20px var(--green-glow);
+    }
+    .btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--green-soft); }
+    .btn-ghost {
+      background: var(--surface-hover);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover {
+      background: var(--border-focus);
+      border-color: var(--green);
+      color: var(--green-bright);
+    }
+    .btn-ghost:focus-visible { outline: none; border-color: var(--green); box-shadow: 0 0 0 2px var(--green-soft); }
+    .form-row { margin-bottom: 1.1rem; }
+    .form-row:last-child { margin-bottom: 0; }
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.02em;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.95rem;
+      font-family: inherit;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    input[type="password"] { font-family: inherit; }
+    input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: 0.8; }
+    input:hover, textarea:hover { border-color: var(--border-focus); }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px var(--green-soft);
+    }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 560px) { .grid2 { grid-template-columns: 1fr; } }
+    .message {
+      padding: 0.85rem 1.1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      margin-top: 1rem;
+      border: 1px solid transparent;
+      animation: fadeIn 0.25s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+    .message.error { background: var(--error-soft); color: var(--error); border-color: rgba(201, 74, 74, 0.25); }
+    .message.success { background: rgba(45, 138, 94, 0.12); color: var(--success); border-color: rgba(45, 138, 94, 0.3); }
+    .message.info { background: var(--info-soft); color: var(--green-bright); border-color: rgba(123, 237, 159, 0.25); }
+    .preview {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.1rem;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 1rem;
+      animation: fadeIn 0.2s ease;
+    }
+    .preview::-webkit-scrollbar { width: 8px; height: 8px; }
+    .preview::-webkit-scrollbar-track { background: var(--surface); border-radius: 4px; }
+    .preview::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .tabs {
+      display: flex;
+      gap: 0.25rem;
+      margin-bottom: 1.25rem;
+      padding: 0.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow);
+    }
+    .tabs.hidden { display: none; }
+    .tab {
+      flex: 1;
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      font-family: inherit;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .tab:hover { color: var(--text); background: var(--surface-hover); }
+    .tab.active { background: var(--green-soft); color: var(--green-bright); }
+    .state-configure, .state-login, .state-dashboard { display: none; }
+    .state-configure.active, .state-login.active, .state-dashboard.active { display: block; animation: fadeIn 0.3s ease; }
+    .head-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 0.25rem;
+    }
+    .head-label {
+      font-weight: 600;
+      color: var(--green-bright);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .head-label::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 10px var(--green);
+    }
+    .head-actions { display: flex; gap: 0.5rem; }
+    .loading { opacity: 0.75; pointer-events: none; }
+    .loading .btn-primary { position: relative; }
+    .loading .btn-primary::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(10,10,10,0.2);
+      border-top-color: #0a0a0a;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-left: 0.5rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .secure-note {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 1.25rem;
+      padding: 0.75rem 0;
+      border-top: 1px solid var(--border);
+    }
+    .secure-note strong { color: var(--green); }
+    .link-soft {
+      color: var(--green-bright);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color var(--transition);
+    }
+    .link-soft:hover { color: var(--green); text-decoration: underline; }
+    code {
+      background: var(--bg-elevated);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.85em;
+      color: var(--green-bright);
+      border: 1px solid var(--border);
+    }
+    .preview-placeholder {
+      padding: 1rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      background: var(--bg-elevated);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-sm);
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="logo">
+        <div class="logo-icon"></div>
+        <h1>Email Automator</h1>
+      </div>
+      <p class="subtitle">Structured context <span>→</span> draft <span>→</span> Outlook</p>
+    </header>
+
+    <div id="tabs" class="tabs hidden">
+      <button type="button" class="tab active" data-tab="configure">Configure</button>
+      <button type="button" class="tab" data-tab="login">Sign in</button>
+      <button type="button" class="tab" data-tab="dashboard">Dashboard</button>
+    </div>
+
+    <div id="state-configure" class="state-configure">
+      <div class="card">
+        <h2>Configure credentials</h2>
+        <p class="card-desc">Enter your Microsoft Entra (Azure AD) app credentials. Get them from Azure Portal → Entra ID → App registrations. Redirect URI: <code>{BASE_URL}/auth/callback</code>. Delegated permissions: Mail.Read, Mail.ReadWrite, offline_access, openid, profile.</p>
+        <form id="form-config">
+          <div class="form-row">
+            <label for="cfg-client-id">Azure Application (client) ID *</label>
+            <input type="text" id="cfg-client-id" name="azureClientId" required placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off">
+          </div>
+          <div class="form-row">
+            <label for="cfg-client-secret">Azure Client secret *</label>
+            <input type="password" id="cfg-client-secret" name="azureClientSecret" required placeholder="Client secret value" autocomplete="off">
+          </div>
+          <div class="form-row">
+            <label for="cfg-tenant-id">Azure Tenant ID (optional)</label>
+            <input type="text" id="cfg-tenant-id" name="azureTenantId" placeholder="common or your tenant ID" autocomplete="off">
+          </div>
+          <div class="form-row">
+            <label for="cfg-openai">OpenAI API key (optional, for LLM drafts)</label>
+            <input type="password" id="cfg-openai" name="openaiApiKey" placeholder="sk-..." autocomplete="off">
+          </div>
+          <button type="submit" class="btn btn-primary" id="btn-save-config">Save and encrypt</button>
+        </form>
+        <p class="secure-note"><strong>Encrypted at rest.</strong> Credentials are encrypted with AES-256-GCM and stored on the server. They are never returned to the browser.</p>
+        <div id="config-msg" class="message" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div id="state-login" class="state-login">
+      <div class="card">
+        <h2>Sign in</h2>
+        <p class="card-desc">Credentials are configured. Sign in with Microsoft 365 to access mail and drafts.</p>
+        <p id="login-preview-note" class="preview-placeholder" style="display:none; margin-bottom:1rem;">Preview: add your credentials in the Configure tab to sign in for real.</p>
+        <a href="/login" class="btn btn-primary">Sign in with Microsoft</a>
+        <p style="margin-top:1.25rem; font-size:0.9rem;"><a href="#" class="link-soft" id="link-reconfigure">Update credentials</a></p>
+      </div>
+    </div>
+
+    <div id="state-dashboard" class="state-dashboard">
+      <p id="dashboard-preview-note" class="preview-placeholder" style="display:none; margin-bottom:1rem;">Preview: after you configure and sign in, you’ll use this screen to load folders, get context, and create drafts.</p>
+      <div class="card head-row">
+        <span id="head-label" class="head-label">Signed in</span>
+        <span class="head-actions">
+          <a href="/" class="btn btn-ghost" onclick="event.preventDefault(); location.reload();">Refresh</a>
+        </span>
+      </div>
+
+      <div class="card">
+        <h2>Folders</h2>
+        <p class="card-desc">List your Microsoft 365 mail folders.</p>
+        <button type="button" class="btn btn-ghost" id="btn-folders">Load folders</button>
+        <div id="folders-out" class="preview" style="display:none;"></div>
+        <div id="folders-msg" class="message" style="display:none;"></div>
+      </div>
+
+      <div class="card">
+        <h2>Context</h2>
+        <p class="card-desc">Structured context from a folder and date range: participants, contacts, threads.</p>
+        <div class="grid2">
+          <div class="form-row">
+            <label>Folder</label>
+            <input type="text" id="ctx-folder" value="inbox" placeholder="inbox">
+          </div>
+          <div class="form-row">
+            <label>Top (max messages)</label>
+            <input type="number" id="ctx-top" value="50" min="1" max="500">
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="form-row">
+            <label>From date (optional)</label>
+            <input type="date" id="ctx-from">
+          </div>
+          <div class="form-row">
+            <label>To date (optional)</label>
+            <input type="date" id="ctx-to">
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary" id="btn-context">Get context</button>
+        <div id="context-out" class="preview" style="display:none;"></div>
+        <div id="context-msg" class="message" style="display:none;"></div>
+      </div>
+
+      <div class="card">
+        <h2>Create draft</h2>
+        <p class="card-desc">Uses context from the folder/range below, then saves a draft to your Outlook Drafts.</p>
+        <div class="form-row">
+          <label>To (recipient email)</label>
+          <input type="email" id="draft-to" placeholder="someone@example.com" required>
+        </div>
+        <div class="form-row">
+          <label>Subject (optional)</label>
+          <input type="text" id="draft-subject" placeholder="Draft subject">
+        </div>
+        <div class="grid2">
+          <div class="form-row">
+            <label>Context folder</label>
+            <input type="text" id="draft-folder" value="inbox" placeholder="inbox">
+          </div>
+          <div class="form-row">
+            <label>Max messages for context</label>
+            <input type="number" id="draft-top" value="50" min="1" max="200">
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="form-row">
+            <label>From date (optional)</label>
+            <input type="date" id="draft-from">
+          </div>
+          <div class="form-row">
+            <label>To date (optional)</label>
+            <input type="date" id="draft-to-date">
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary" id="btn-draft">Generate & save draft</button>
+        <div id="draft-msg" class="message" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function showTab(tabId) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      const tabEl = document.querySelector('.tab[data-tab="' + tabId + '"]');
+      if (tabEl) tabEl.classList.add('active');
+      $('state-configure').classList.remove('active');
+      $('state-login').classList.remove('active');
+      $('state-dashboard').classList.remove('active');
+      if (tabId === 'configure') $('state-configure').classList.add('active');
+      else if (tabId === 'login') {
+        $('state-login').classList.add('active');
+        const note = $('login-preview-note');
+        if (note) note.style.display = $('tabs').classList.contains('hidden') ? 'none' : 'block';
+      } else if (tabId === 'dashboard') {
+        $('state-dashboard').classList.add('active');
+        const note = $('dashboard-preview-note');
+        if (note) note.style.display = $('tabs').classList.contains('hidden') ? 'none' : 'block';
+      }
+    }
+
+    async function init() {
+      const status = await fetch('/api/config/status').then(r => r.json()).catch(() => ({ configured: false }));
+      const me = await fetch('/api/me').then(r => r.json()).catch(() => ({ configured: false, authenticated: false }));
+      const configured = status.configured || me.configured;
+      const authenticated = me.authenticated;
+
+      $('state-configure').classList.remove('active');
+      $('state-login').classList.remove('active');
+      $('state-dashboard').classList.remove('active');
+      $('tabs').classList.add('hidden');
+
+      if (!configured) {
+        $('tabs').classList.remove('hidden');
+        showTab('configure');
+        document.querySelectorAll('.tab').forEach(btn => {
+          btn.addEventListener('click', () => showTab(btn.dataset.tab));
+        });
+        return;
+      }
+      if (!authenticated) {
+        $('state-login').classList.add('active');
+        return;
+      }
+      $('state-dashboard').classList.add('active');
+      $('head-label').textContent = 'Signed in';
+    }
+
+    if ($('form-config')) $('form-config').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = $('config-msg');
+      msg.style.display = 'none';
+      const btn = $('btn-save-config');
+      btn.classList.add('loading');
+      const body = {
+        azureClientId: $('cfg-client-id').value.trim(),
+        azureClientSecret: $('cfg-client-secret').value.trim(),
+        azureTenantId: ($('cfg-tenant-id').value.trim() || 'common'),
+        openaiApiKey: $('cfg-openai').value.trim() || '',
+      };
+      try {
+        const res = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || res.statusText);
+        }
+        msg.className = 'message success';
+        msg.textContent = 'Credentials saved and encrypted. Sign in with Microsoft to continue.';
+        msg.style.display = 'block';
+        setTimeout(() => location.reload(), 1500);
+      } catch (err) {
+        msg.className = 'message error';
+        msg.textContent = err.message;
+        msg.style.display = 'block';
+      }
+      btn.classList.remove('loading');
+    });
+
+    if ($('link-reconfigure')) $('link-reconfigure').addEventListener('click', (e) => {
+      e.preventDefault();
+      $('state-login').classList.remove('active');
+      if ($('state-configure')) $('state-configure').classList.add('active');
+    });
+
+    $('btn-folders').addEventListener('click', async () => {
+      const btn = $('btn-folders');
+      const out = $('folders-out');
+      const msg = $('folders-msg');
+      out.style.display = msg.style.display = 'none';
+      btn.classList.add('loading');
+      try {
+        const res = await fetch('/api/folders');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || res.statusText);
+        const list = data.folders || [];
+        if (list.length === 0) {
+          msg.className = 'message info';
+          msg.textContent = 'No folders returned.';
+          msg.style.display = 'block';
+        } else {
+          out.textContent = list.map(f => `${f.displayName} (id: ${f.id})`).join('\n');
+          out.style.display = 'block';
+        }
+      } catch (e) {
+        msg.className = 'message error';
+        msg.textContent = e.message;
+        msg.style.display = 'block';
+      }
+      btn.classList.remove('loading');
+    });
+
+    $('btn-context').addEventListener('click', async () => {
+      const btn = $('btn-context');
+      const out = $('context-out');
+      const msg = $('context-msg');
+      out.style.display = msg.style.display = 'none';
+      btn.classList.add('loading');
+      const params = new URLSearchParams({
+        folderId: $('ctx-folder').value.trim() || 'inbox',
+        top: $('ctx-top').value || '50',
+      });
+      if ($('ctx-from').value) params.set('from', $('ctx-from').value);
+      if ($('ctx-to').value) params.set('to', $('ctx-to').value);
+      try {
+        const res = await fetch('/api/context?' + params);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || res.statusText);
+        out.textContent = JSON.stringify(data, null, 2);
+        out.style.display = 'block';
+      } catch (e) {
+        msg.className = 'message error';
+        msg.textContent = e.message;
+        msg.style.display = 'block';
+      }
+      btn.classList.remove('loading');
+    });
+
+    $('btn-draft').addEventListener('click', async () => {
+      const btn = $('btn-draft');
+      const msg = $('draft-msg');
+      msg.style.display = 'none';
+      const to = $('draft-to').value.trim();
+      if (!to) {
+        msg.className = 'message error';
+        msg.textContent = 'Enter recipient email.';
+        msg.style.display = 'block';
+        return;
+      }
+      btn.classList.add('loading');
+      const body = {
+        to,
+        subject: $('draft-subject').value.trim() || undefined,
+        folderId: $('draft-folder').value.trim() || 'inbox',
+        dateFrom: $('draft-from').value || undefined,
+        dateTo: $('draft-to-date').value || undefined,
+        top: $('draft-top').value || 50,
+      };
+      try {
+        const res = await fetch('/api/draft', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || res.statusText);
+        msg.className = 'message success';
+        msg.textContent = `Draft saved. Subject: ${data.subject || '(no subject)'}. Check Outlook Drafts.`;
+        msg.style.display = 'block';
+      } catch (e) {
+        msg.className = 'message error';
+        msg.textContent = e.message;
+        msg.style.display = 'block';
+      }
+      btn.classList.remove('loading');
+    });
+
+    init();
+  </script>
+</body>
+</html>
