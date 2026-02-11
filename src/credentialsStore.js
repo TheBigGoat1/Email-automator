@@ -66,6 +66,11 @@ export function setCredentials(credentials) {
       tenantId: (credentials.azureTenantId?.trim?.() || credentials.azure?.tenantId || 'common'),
     },
     openaiApiKey: credentials.openaiApiKey?.trim?.() || credentials.openaiApiKey || '',
+    defaultBlocks: {
+      opener: credentials.opener?.trim?.() || credentials.defaultBlocks?.opener || '',
+      closing: credentials.closing?.trim?.() || credentials.defaultBlocks?.closing || '',
+      signature: credentials.signature?.trim?.() || credentials.defaultBlocks?.signature || '',
+    },
   };
   if (!payload.azure.clientId || !payload.azure.clientSecret)
     throw new Error('Azure Client ID and Client Secret are required');
@@ -73,6 +78,11 @@ export function setCredentials(credentials) {
   const blob = encrypt(JSON.stringify(payload));
   writeFileSync(CREDENTIALS_FILE, blob, { mode: 0o600 });
   return true;
+}
+
+export function getDefaultBlocks() {
+  const c = loadFromFile();
+  return c?.defaultBlocks || null;
 }
 
 export function isConfigured() {

@@ -1,10 +1,16 @@
-import { appendFileSync, mkdirSync, existsSync } from 'fs';
+import { appendFileSync, mkdirSync, existsSync, statSync, renameSync, unlinkSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const LOG_DIR = join(__dirname, '..', 'logs');
-const LOG_FILE = join(LOG_DIR, 'app.log');
+const LOG_MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+const LOG_BACKUP_SUFFIX = '.1';
+
+function getLogPath() {
+  const date = new Date().toISOString().slice(0, 10);
+  return join(LOG_DIR, `app-${date}.log`);
+}
 
 const LEVELS = { info: 'INFO', warn: 'WARN', error: 'ERROR' };
 
@@ -20,7 +26,14 @@ function formatMessage(level, event, data = {}) {
 function writeToFile(line) {
   try {
     if (!existsSync(LOG_DIR)) mkdirSync(LOG_DIR, { recursive: true });
-    appendFileSync(LOG_FILE, line + '\n', 'utf8');
+    const logPath = getLogPath();
+    const stat = existsSync(logPath) ? statSync(logPath) : { size: 0 };
+    if (stat.size >= LOG_MAX_SIZE_BYTES) {
+      const backupPath = logPath + LOG_BACKUP_SUFFIX;
+      if (existsSync(backupPath)) unlinkSync(backupPath);
+      renameSync(logPath, backupPath);
+    }
+    appendFileSync(logPath, line + '\n', 'utf8');
   } catch (_) {}
 }
 

@@ -65,25 +65,49 @@ function threadGroups(messages) {
   }));
 }
 
+const FORMAL_KEYWORDS = /re:\s*meeting|agenda|proposal|contract|formal|dear\s+(sir|madam)|regards|sincerely/i;
+const CASUAL_KEYWORDS = /thanks!|hey\s|hi\s|quick\s|catch\s+up|chat\s|later/i;
+
+function inferToneSignals(messages) {
+  const subjects = messages.map((m) => (m.subject || '')).join(' ');
+  const previews = messages.map((m) => (m.bodyPreview || '')).join(' ');
+  const combined = (subjects + ' ' + previews).toLowerCase();
+  const formal = FORMAL_KEYWORDS.test(combined);
+  const casual = CASUAL_KEYWORDS.test(combined);
+  return {
+    suggestedTone: formal && !casual ? 'formal' : casual && !formal ? 'casual' : 'neutral',
+    signals: { formal, casual },
+  };
+}
+
 /**
  * @param {Array} messages - from getMessagesInRange
+ * @param {Object} options - { includeBody: boolean, bodyMaxChars: number }
  * @returns structured context for LLM
  */
-export function buildStructuredContext(messages) {
-  if (!messages?.length) return { participants: [], byContact: [], threads: [], summary: 'No messages in range.' };
+export function buildStructuredContext(messages, options = {}) {
+  if (!messages?.length) return { participants: [], byContact: [], threads: [], toneSignals: {}, summary: 'No messages in range.' };
   const participants = extractParticipants(messages);
   const byContact = aggregateByContact(messages);
   const threads = threadGroups(messages);
+  const toneSignals = inferToneSignals(messages);
   const dateRange = {
     from: messages[messages.length - 1]?.receivedDateTime,
     to: messages[0]?.receivedDateTime,
   };
+  const maxBody = options.bodyMaxChars ?? 300;
+  let recentBodies = [];
+  if (options.includeBody && messages.length) {
+    recentBodies = messages.slice(0, 10).map((m) => (m.bodyPreview || m.body?.content || '').slice(0, maxBody));
+  }
   return {
     participants,
     byContact,
     threads,
+    toneSignals,
     dateRange,
     totalMessages: messages.length,
-    summary: `${messages.length} messages; ${byContact.length} contacts; ${threads.length} threads.`,
+    ...(recentBodies.length ? { recentBodies } : {}),
+    summary: `${messages.length} messages; ${byContact.length} contacts; ${threads.length} threads; tone: ${toneSignals.suggestedTone}.`,
   };
 }

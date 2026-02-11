@@ -321,6 +321,7 @@
         <h2>Configure credentials</h2>
         <p class="card-desc">Enter your Microsoft Entra (Azure AD) app credentials. Get them from Azure Portal → Entra ID → App registrations. Redirect URI: <code>{BASE_URL}/auth/callback</code>. Delegated permissions: Mail.Read, Mail.ReadWrite, offline_access, openid, profile.</p>
         <form id="form-config">
+          <input type="hidden" id="cfg-csrf" name="csrfToken">
           <div class="form-row">
             <label for="cfg-client-id">Azure Application (client) ID *</label>
             <input type="text" id="cfg-client-id" name="azureClientId" required placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off">
@@ -360,6 +361,7 @@
         <span id="head-label" class="head-label">Signed in</span>
         <span class="head-actions">
           <a href="/" class="btn btn-ghost" onclick="event.preventDefault(); location.reload();">Refresh</a>
+          <a href="/logout" class="btn btn-ghost">Sign out</a>
         </span>
       </div>
 
@@ -430,7 +432,15 @@
             <input type="date" id="draft-to-date">
           </div>
         </div>
-        <button type="button" class="btn btn-primary" id="btn-draft">Generate & save draft</button>
+        <div class="form-row"><label>Custom opener (optional)</label><input type="text" id="draft-opener" placeholder="e.g. Hi [Name],"></div>
+        <div class="form-row"><label>Custom closing (optional)</label><input type="text" id="draft-closing" placeholder="e.g. Best regards,"></div>
+        <div class="form-row"><label>Custom signature (optional)</label><input type="text" id="draft-signature" placeholder="e.g. — Your name"></div>
+        <div id="draft-preview" class="preview" style="display:none; margin-bottom:0.75rem;"></div>
+        <div id="draft-preview-actions" style="display:none; margin-bottom:1rem;">
+          <button type="button" class="btn btn-primary" id="btn-draft-confirm">Confirm & save to Drafts</button>
+          <button type="button" class="btn btn-ghost" id="btn-draft-cancel-preview">Cancel</button>
+        </div>
+        <button type="button" class="btn btn-primary" id="btn-draft">Generate preview</button>
         <div id="draft-msg" class="message" style="display:none;"></div>
       </div>
     </div>
@@ -463,6 +473,7 @@
       const me = await fetch('/api/me').then(r => r.json()).catch(() => ({ configured: false, authenticated: false }));
       const configured = status.configured || me.configured;
       const authenticated = me.authenticated;
+      if (me.csrfToken && $('cfg-csrf')) $('cfg-csrf').value = me.csrfToken;
 
       $('state-configure').classList.remove('active');
       $('state-login').classList.remove('active');
@@ -482,7 +493,13 @@
         return;
       }
       $('state-dashboard').classList.add('active');
-      $('head-label').textContent = 'Signed in';
+      $('head-label').textContent = me.user ? `Signed in as ${me.user}` : 'Signed in';
+      try {
+        const blocks = await fetch('/api/config/default-blocks').then(r => r.json());
+        if (blocks?.opener && $('draft-opener') && !$('draft-opener').value) $('draft-opener').value = blocks.opener;
+        if (blocks?.closing && $('draft-closing') && !$('draft-closing').value) $('draft-closing').value = blocks.closing;
+        if (blocks?.signature && $('draft-signature') && !$('draft-signature').value) $('draft-signature').value = blocks.signature;
+      } catch (_) {}
     }
 
     if ($('form-config')) $('form-config').addEventListener('submit', async (e) => {
@@ -501,7 +518,8 @@
         const res = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || res.statusText);
+          const msgErr = data.error?.message || data.error || res.statusText;
+          throw new Error(typeof msgErr === 'string' ? msgErr : JSON.stringify(msgErr));
         }
         msg.className = 'message success';
         msg.textContent = 'Credentials saved and encrypted. Sign in with Microsoft to continue.';
@@ -530,7 +548,7 @@
       try {
         const res = await fetch('/api/folders');
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || res.statusText);
+        if (!res.ok) throw new Error(data.error?.message || data.error || res.statusText);
         const list = data.folders || [];
         if (list.length === 0) {
           msg.className = 'message info';
@@ -563,7 +581,7 @@
       try {
         const res = await fetch('/api/context?' + params);
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || res.statusText);
+        if (!res.ok) throw new Error(data.error?.message || data.error || res.statusText);
         out.textContent = JSON.stringify(data, null, 2);
         out.style.display = 'block';
       } catch (e) {
@@ -574,10 +592,13 @@
       btn.classList.remove('loading');
     });
 
+    let lastDraftParams = null;
     $('btn-draft').addEventListener('click', async () => {
       const btn = $('btn-draft');
       const msg = $('draft-msg');
-      msg.style.display = 'none';
+      const previewEl = $('draft-preview');
+      const actionsEl = $('draft-preview-actions');
+      msg.style.display = previewEl.style.display = actionsEl.style.display = 'none';
       const to = $('draft-to').value.trim();
       if (!to) {
         msg.className = 'message error';
@@ -586,18 +607,47 @@
         return;
       }
       btn.classList.add('loading');
-      const body = {
+      lastDraftParams = {
         to,
         subject: $('draft-subject').value.trim() || undefined,
         folderId: $('draft-folder').value.trim() || 'inbox',
         dateFrom: $('draft-from').value || undefined,
         dateTo: $('draft-to-date').value || undefined,
         top: $('draft-top').value || 50,
+        opener: $('draft-opener')?.value?.trim() || undefined,
+        closing: $('draft-closing')?.value?.trim() || undefined,
+        signature: $('draft-signature')?.value?.trim() || undefined,
       };
       try {
-        const res = await fetch('/api/draft', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const res = await fetch('/api/draft/preview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lastDraftParams) });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || res.statusText);
+        if (!res.ok) throw new Error(data.error?.message || data.error || res.statusText);
+        previewEl.textContent = data.body || '';
+        previewEl.style.display = 'block';
+        actionsEl.style.display = 'block';
+      } catch (e) {
+        msg.className = 'message error';
+        msg.textContent = e.message;
+        msg.style.display = 'block';
+      }
+      btn.classList.remove('loading');
+    });
+    $('btn-draft-cancel-preview').addEventListener('click', () => {
+      $('draft-preview').style.display = 'none';
+      $('draft-preview-actions').style.display = 'none';
+    });
+    $('btn-draft-confirm').addEventListener('click', async () => {
+      if (!lastDraftParams) return;
+      const msg = $('draft-msg');
+      const previewEl = $('draft-preview');
+      const actionsEl = $('draft-preview-actions');
+      const btn = $('btn-draft-confirm');
+      btn.classList.add('loading');
+      try {
+        const res = await fetch('/api/draft', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lastDraftParams) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || data.error || res.statusText);
+        previewEl.style.display = actionsEl.style.display = 'none';
         msg.className = 'message success';
         msg.textContent = `Draft saved. Subject: ${data.subject || '(no subject)'}. Check Outlook Drafts.`;
         msg.style.display = 'block';

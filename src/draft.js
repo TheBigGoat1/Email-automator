@@ -38,7 +38,10 @@ export function assembleDraftBody(generatedBody, blocks = getContentBlocks()) {
 export async function generateDraftBody(structuredContext, recipientAddress, options = {}) {
   const blocks = getContentBlocks(options);
   const contextSummary = JSON.stringify(structuredContext, null, 2);
-  const system = `You are an email assistant. Write a concise, professional email body (2–4 short paragraphs) based only on the provided context. Do not invent facts. Match tone suggested by recent subjects and interaction frequency. Output only the body text, no subject or greetings.`;
+  const toneHint = structuredContext.toneSignals?.suggestedTone
+    ? ` Match the suggested tone: ${structuredContext.toneSignals.suggestedTone}.`
+    : '';
+  const system = `You are an email assistant. Write a concise, professional email body (2–4 short paragraphs) based only on the provided context. Do not invent facts. Match tone suggested by recent subjects and interaction frequency.${toneHint} Output only the body text, no subject or greetings.`;
   const user = `Context:\n${contextSummary}\n\nRecipient: ${recipientAddress}\n\nGenerate the email body:`;
 
   const openai = getOpenAI();
@@ -59,6 +62,14 @@ export async function generateDraftBody(structuredContext, recipientAddress, opt
   });
   const generated = completion.choices?.[0]?.message?.content?.trim() || '[No content generated.]';
   return assembleDraftBody(generated, blocks);
+}
+
+/**
+ * Generate draft body only (for preview). Returns { body }.
+ */
+export async function generateDraftBodyOnly(structuredContext, recipientAddress, options = {}) {
+  const body = await generateDraftBody(structuredContext, recipientAddress, options);
+  return { body };
 }
 
 /**

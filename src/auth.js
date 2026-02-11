@@ -43,6 +43,38 @@ export async function redeemCode(code) {
   return { accessToken: result.accessToken, refreshToken: result.refreshToken, account: result.account };
 }
 
+/**
+ * Try to refresh access token using session's refresh token. Updates session and returns new accessToken, or null on failure.
+ */
+export async function refreshAccessToken(session) {
+  const refreshToken = session?.refreshToken;
+  if (!refreshToken) return null;
+  try {
+    const client = getMsal();
+    const result = await client.acquireTokenByRefreshToken({
+      refreshToken,
+      scopes,
+    });
+    if (result?.accessToken) {
+      session.accessToken = result.accessToken;
+      if (result.refreshToken) session.refreshToken = result.refreshToken;
+      if (result.account) session.account = result.account;
+      return result.accessToken;
+    }
+  } catch (_) {}
+  return null;
+}
+
 export function getTokenFromSession(session) {
   return session?.accessToken ?? null;
+}
+
+/**
+ * Returns a valid access token, refreshing if needed. Returns null if not authenticated or refresh fails.
+ */
+export async function getValidAccessToken(session) {
+  let token = getTokenFromSession(session);
+  if (token) return token;
+  token = await refreshAccessToken(session);
+  return token;
 }

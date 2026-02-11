@@ -18,15 +18,17 @@ export async function listMailFolders(client) {
  * @param {string} fromDate - ISO date (e.g. 2024-01-01)
  * @param {string} toDate - ISO date
  * @param {number} top - max messages
+ * @param {number} skip - skip N messages (pagination)
  */
-export async function getMessagesInRange(client, folderId, fromDate, toDate, top = 100) {
+export async function getMessagesInRange(client, folderId, fromDate, toDate, top = 100, skip = 0) {
   const fromIso = fromDate ? new Date(fromDate).toISOString() : null;
   const toIso = toDate ? new Date(toDate).toISOString() : null;
   let req = client
     .api(`/me/mailFolders/${folderId}/messages`)
     .select('id,subject,from,toRecipients,ccRecipients,receivedDateTime,conversationId,bodyPreview,isRead')
     .orderby('receivedDateTime desc')
-    .top(top);
+    .top(Math.min(top, 500))
+    .skip(skip);
   if (fromIso) req = req.filter(`receivedDateTime ge '${fromIso}'`);
   if (toIso) req = req.filter(`receivedDateTime le '${toIso}'`);
   const res = await req.get();
